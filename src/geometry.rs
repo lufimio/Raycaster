@@ -4,8 +4,26 @@ use std::{
     ops::{Add, Div, Index, Mul, Neg, Sub},
 };
 
+use rand::{random, random_range};
+
 pub fn sample_square() -> Vec3 {
-    Vec3::new(rand::random::<f64>() - 0.5, rand::random::<f64>() - 0.5, 0)
+    Vec3::new(random::<f64>() - 0.5, random::<f64>() - 0.5, 0)
+}
+
+pub fn linear_to_gamma(linear: f64) -> f64 {
+    if linear > 0.0 { linear.sqrt() } else { 0.0 }
+}
+
+pub fn random_unit_vector() -> Vec3 {
+    let y: f64 = random_range(-1.0..1.0);
+    let r: f64 = (1. - y * y).sqrt();
+    let long: f64 = random_range(-f64::consts::PI..f64::consts::PI);
+    Vec3::new(r * long.sin(), y, r * long.cos())
+}
+
+pub fn random_on_hemisphere(normal: Vec3) -> Vec3 {
+    let unit = random_unit_vector();
+    if unit.dot(normal) > 0.0 { unit } else { -unit }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -75,6 +93,22 @@ impl Vec3 {
         Self::new(0, 0, 0)
     }
 
+    pub fn random() -> Self {
+        Self {
+            x: random(),
+            y: random(),
+            z: random(),
+        }
+    }
+
+    pub fn random_range(min: f64, max: f64) -> Self {
+        Self {
+            x: random_range(min..max),
+            y: random_range(min..max),
+            z: random_range(min..max),
+        }
+    }
+
     pub fn dot(self, other: Vec3) -> f64 {
         self.x * other.x + self.y * other.y + self.z * other.z
     }
@@ -97,6 +131,15 @@ impl Vec3 {
 
     pub fn normalized(self) -> Vec3 {
         self / self.length()
+    }
+
+    pub fn near_zero(self) -> bool {
+        let s = 1e-8;
+        self.x.abs() < s && self.y.abs() < s && self.z.abs() < s
+    }
+
+    pub fn reflect(self, normal: Vec3) -> Vec3 {
+        self - 2.0 * self.dot(normal) * normal
     }
 }
 
@@ -130,10 +173,23 @@ impl Add for Vec3 {
     }
 }
 
-impl Mul<f64> for Vec3 {
+impl Mul for Vec3 {
     type Output = Vec3;
 
-    fn mul(self, other: f64) -> Self::Output {
+    fn mul(self, other: Self) -> Self::Output {
+        Vec3 {
+            x: self.x * other.x,
+            y: self.y * other.y,
+            z: self.z * other.z,
+        }
+    }
+}
+
+impl<T> Mul<T> for Vec3 where T: Into<f64> {
+    type Output = Vec3;
+
+    fn mul(self, other: T) -> Self::Output {
+        let other = other.into();
         Vec3 {
             x: self.x * other,
             y: self.y * other,
@@ -154,11 +210,11 @@ impl Mul<Vec3> for f64 {
     }
 }
 
-impl Div<f64> for Vec3 {
+impl<T> Div<T> for Vec3 where T: Into<f64> {
     type Output = Vec3;
 
-    fn div(self, other: f64) -> Self::Output {
-        self * (1. / other)
+    fn div(self, other: T) -> Self::Output {
+        self * (1. / other.into())
     }
 }
 
@@ -192,12 +248,16 @@ pub type Color = Vec3;
 
 impl Color {
     pub fn write_ppm(self) {
+        let r = linear_to_gamma(self.x);
+        let g = linear_to_gamma(self.y);
+        let b = linear_to_gamma(self.z);
+
         let intensity = Interval::new(0, 0.999);
         println!(
             "{} {} {}",
-            (256. * intensity.clamp(self.x)) as u8,
-            (256. * intensity.clamp(self.y)) as u8,
-            (256. * intensity.clamp(self.z)) as u8,
+            (256. * intensity.clamp(r)) as u8,
+            (256. * intensity.clamp(g)) as u8,
+            (256. * intensity.clamp(b)) as u8,
         );
     }
 }

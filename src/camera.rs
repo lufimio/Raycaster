@@ -1,8 +1,8 @@
 use indicatif::ProgressBar;
 
 use crate::{
-    geometry::{Color, Interval, Point3, Ray, Vec3, sample_square},
-    hittable::World,
+    geometry::{Color, Interval, Point3, Ray, Vec3, random_on_hemisphere, sample_square},
+    hittable::World, material::Scatterable,
 };
 
 pub struct Camera {
@@ -11,13 +11,14 @@ pub struct Camera {
     pub image_height: u32,
     pub center: Point3,
     pub samples_per_pixel: u32,
+    pub max_depth: u32,
     pixel00_loc: Point3,
     pixel_delta_u: Point3,
     pixel_delta_v: Point3,
 }
 
 impl Camera {
-    pub fn new(aspect_ratio: f64, image_width: u32, samples_per_pixel: u32) -> Self {
+    pub fn new(aspect_ratio: f64, image_width: u32, samples_per_pixel: u32, max_depth: u32) -> Self {
         let image_height = (image_width as f64 / aspect_ratio) as u32;
         let img_height = if image_height < 1 { 1 } else { image_height };
 
@@ -42,6 +43,7 @@ impl Camera {
             image_height,
             center,
             samples_per_pixel,
+            max_depth,
             pixel00_loc,
             pixel_delta_u,
             pixel_delta_v,
@@ -57,7 +59,7 @@ impl Camera {
                 let mut pixel_color = Color::zero();
                 for _sample in 0..self.samples_per_pixel {
                     let r = self.get_ray(i, j);
-                    pixel_color = pixel_color + self.get_ray_color(r, &world);
+                    pixel_color = pixel_color + self.get_ray_color(r, self.max_depth, &world);
                     bar.inc(1);
                 }
                 (pixel_color / self.samples_per_pixel as f64).write_ppm();
@@ -75,10 +77,18 @@ impl Camera {
         Ray::new(self.center, pixel_center - self.center)
     }
 
-    pub fn get_ray_color(&self, r: Ray, world: &World) -> Color {
-        if let Some(rec) = world.hit(r, Interval::new(0.0, f64::INFINITY)) {
-            return 0.5 * (rec.normal + Color::new(1, 1, 1));
+    pub fn get_ray_color(&self, r: Ray, depth: u32, world: &World) -> Color {
+        if depth <= 0 {
+            return Color::zero();
         }
+
+        if let Some(rec) = world.hit(r, Interval::new(0.001, f64::INFINITY)) {
+            if let Some((scattered, attenuation)) = rec.mat.scatter(r, &rec) {
+                return attenuation * self.get_ray_color(scattered, depth - 1, world);
+            }
+            return Color::zero();
+        }
+
         let a = 0.5 * (r.direction.normalized().y + 1.0);
         (1.0 - a) * Color::new(1, 1, 1) + a * Color::new(0.5, 0.7, 1)
     }

@@ -1,25 +1,30 @@
 pub mod sphere;
 
+use std::rc::Rc;
+
 use enum_dispatch::enum_dispatch;
 
 use crate::{
     geometry::{Interval, Point3, Ray, Vec3},
     hittable::sphere::Sphere,
+    material::Material,
 };
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct HitRecord {
     pub p: Point3,
     pub normal: Vec3,
+    pub mat: Rc<Material>,
     pub t: f64,
     pub front_face: bool,
 }
 
 impl HitRecord {
-    pub fn new(p: Point3, t: f64) -> Self {
+    pub fn new(p: Point3, mat: Rc<Material>, t: f64) -> Self {
         Self {
             p,
             normal: Vec3::zero(),
+            mat,
             t,
             front_face: false,
         }
