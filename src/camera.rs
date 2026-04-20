@@ -1,5 +1,5 @@
 use image::{ImageResult, Rgb, RgbImage};
-use indicatif::ProgressBar;
+use indicatif::{ProgressBar, ProgressStyle};
 
 use crate::{
     geometry::{
@@ -92,7 +92,14 @@ impl Camera {
     pub fn render(&self, world: &World, output_path: &str) {
         let bar = ProgressBar::new(
             (self.image_height * self.image_width * self.samples_per_pixel) as u64,
+        )
+        .with_style(
+            ProgressStyle::with_template(
+                "{wide_bar} {pos}/{len} [{elapsed_precise}/-{eta_precise}]",
+            )
+            .unwrap(),
         );
+
         let mut img = RgbImage::new(self.image_width, self.image_height);
         for j in 0..self.image_height {
             for i in 0..self.image_width {

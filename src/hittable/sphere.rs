@@ -2,7 +2,8 @@ use std::rc::Rc;
 
 use crate::{
     geometry::{Interval, Point3, Ray},
-    hittable::{HitRecord, Hittable}, material::Material,
+    hittable::{HitRecord, Hittable},
+    material::Material,
 };
 
 #[derive(Debug, Clone)]
@@ -25,9 +26,9 @@ impl Hittable for Sphere {
         }
 
         let sqrtd = discriminant.sqrt();
-        let root = (h - sqrtd) / a;
+        let mut root = (h - sqrtd) / a;
         if !t_interval.surrounds(root) {
-            let root = (h + sqrtd) / a;
+            root = (h + sqrtd) / a;
             if !t_interval.surrounds(root) {
                 return Option::None;
             }

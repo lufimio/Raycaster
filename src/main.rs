@@ -10,8 +10,8 @@ use rand::{random, random_range};
 use crate::{
     camera::Camera,
     geometry::{Color, Point3, Vec3},
-    hittable::{World, sphere::Sphere},
-    material::{Material, dielectric::Dielectric, lambertian::Lambertian, metal::Metal},
+    hittable::{sphere::Sphere, World},
+    material::{dielectric::Dielectric, lambertian::Lambertian, metal::Metal, Material},
 };
 
 fn setup_scattered_balls(world: &mut World) {
@@ -22,7 +22,6 @@ fn setup_scattered_balls(world: &mut World) {
         Rc::clone(&ground_material),
     ));
 
-    /*
     for a in -11..=11 {
         for b in -11..=11 {
             let mat = random_range(0..20);
@@ -47,21 +46,20 @@ fn setup_scattered_balls(world: &mut World) {
             }
         }
     }
-    */
 
-    let material1 = Rc::new(Dielectric::new(1.0).into());
+    let material1 = Rc::new(Dielectric::new(1.5).into());
     world.add(Sphere::new(
         Point3::new(0, 1, 0),
         1.0,
         Rc::clone(&material1),
     ));
 
-    let material2 = Rc::new(Dielectric::new(1.0 / 1.5).into());
-    world.add(Sphere::new(
-        Point3::new(0, 1, 0),
-        0.9,
-        Rc::clone(&material2),
-    ));
+    // let material2 = Rc::new(Dielectric::new(1.0 / 1.5).into());
+    // world.add(Sphere::new(
+    //     Point3::new(0, 1, 0),
+    //     0.9,
+    //     Rc::clone(&material2),
+    // ));
 
     let material3 = Rc::new(Lambertian::new(Color::new(0.4, 0.2, 0.1)).into());
     world.add(Sphere::new(
@@ -85,14 +83,14 @@ fn main() {
 
     let camera = Camera::new(
         16. / 9.,              // aspect ratio
-        400,                   // image width
-        10,                    // samples per pixel
+        400,                  // image width
+        10,                   // samples per pixel
         50,                    // max depth
         20,                    // fov
-        Point3::new(13, 4, 8), // look at
+        Point3::new(13, 2, 3), // look at
         Point3::new(0, 0, 0),  // look from
         Vec3::new(0, 1, 0),    // camera up
-        0,                     // defocus angle
+        0.6,                   // defocus angle
         10,                    // focus distance
     );
 

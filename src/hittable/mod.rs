@@ -74,13 +74,7 @@ impl World {
         let mut closest_dist = t_interval.max;
 
         for obj in &self.objects {
-            if let Some(rec) = obj.hit(
-                r,
-                Interval::new(
-                    t_interval.min,
-                    closest_dist
-                ),
-            ) {
+            if let Some(rec) = obj.hit(r, Interval::new(t_interval.min, closest_dist)) {
                 closest_dist = rec.t;
                 closest = Some(rec);
             }

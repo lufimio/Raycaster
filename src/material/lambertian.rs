@@ -1,5 +1,5 @@
 use crate::{
-    geometry::{Color, Ray, random_unit_vector},
+    geometry::{random_unit_vector, Color, Ray},
     hittable::HitRecord,
     material::Scatterable,
 };
