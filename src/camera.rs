@@ -2,9 +2,7 @@ use image::{DynamicImage, ImageBuffer, ImageResult, Rgb};
 use indicatif::{ProgressBar, ProgressStyle};
 
 use crate::{
-    geometry::{
-        Color, Interval, Point3, Ray, Vec3, random_in_unit_disk,
-    },
+    geometry::{Color, Interval, Point3, Ray, Vec3, random_in_unit_disk},
     hittable::{Hittable, HittableList},
     material::Scatterable,
 };
@@ -29,17 +27,17 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new<T: Into<f64>, U: Into<f64>, V: Into<f64>>(
+    pub fn new(
         aspect_ratio: f64,
         image_width: u32,
         samples_per_pixel: u32,
         max_depth: u32,
-        fov: T,
+        fov: impl Into<f64>,
         lookfrom: Point3,
         lookat: Point3,
         cameraup: Vec3,
-        defocus_angle: U,
-        focus_distance: V,
+        defocus_angle: impl Into<f64>,
+        focus_distance: impl Into<f64>,
     ) -> Self {
         let fov = fov.into();
         let defocus_angle = defocus_angle.into();
@@ -88,7 +86,7 @@ impl Camera {
         }
     }
 
-    pub fn render(&self, world: &HittableList, output_path: &str) {
+    pub fn render<T: Hittable + Send + Sync>(&self, world: &T, output_path: &str) {
         let bar = ProgressBar::new(
             (self.image_height * self.image_width * self.samples_per_pixel) as u64,
         )
@@ -102,7 +100,7 @@ impl Camera {
         let img = DynamicImage::from(ImageBuffer::from_par_fn(
             self.image_width,
             self.image_height,
-            |x: u32, y: u32| -> Rgb<u8> { self.sample_pixel(&world, &bar, x, y) },
+            |x: u32, y: u32| -> Rgb<u8> { self.sample_pixel(world, &bar, x, y) },
         ));
         if let ImageResult::Err(error) = img.save(output_path) {
             eprintln!("Error writing image: {}", error)
@@ -111,11 +109,11 @@ impl Camera {
         bar.finish();
     }
 
-    fn sample_pixel(&self, world: &HittableList, bar: &ProgressBar, x: u32, y: u32) -> Rgb<u8> {
+    fn sample_pixel<T: Hittable>(&self, world: &T, bar: &ProgressBar, x: u32, y: u32) -> Rgb<u8> {
         let mut pixel_color = Color::zero();
         for _sample in 0..self.samples_per_pixel {
             let r = self.get_ray(x, y);
-            pixel_color = pixel_color + self.get_ray_color(r, self.max_depth, &world);
+            pixel_color = pixel_color + self.get_ray_color(r, self.max_depth, world);
             bar.inc(1);
         }
         pixel_color = pixel_color / self.samples_per_pixel as f64;
@@ -143,7 +141,7 @@ impl Camera {
         self.lookfrom + p.x * self.defocus_disk_u + p.y * self.defocus_disk_v
     }
 
-    fn get_ray_color(&self, r: Ray, depth: u32, world: &HittableList) -> Color {
+    fn get_ray_color<T: Hittable>(&self, r: Ray, depth: u32, world: &T) -> Color {
         if depth <= 0 {
             return Color::zero();
         }

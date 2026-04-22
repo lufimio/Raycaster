@@ -10,7 +10,7 @@ use rand::{random, random_range};
 use crate::{
     camera::Camera,
     geometry::{Color, Point3, Vec3},
-    hittable::{sphere::Sphere, HittableList},
+    hittable::{HittableList, bvh::BVHNode, sphere::Sphere},
     material::{dielectric::Dielectric, lambertian::Lambertian, metal::Metal},
 };
 
@@ -76,6 +76,8 @@ fn setup_scattered_balls() {
         1.0,
         Arc::clone(&material4),
     ));
+
+    let world = BVHNode::from_hittable_list(world);
 
     let camera = Camera::new(
         16. / 9.,              // aspect ratio

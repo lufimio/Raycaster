@@ -57,7 +57,7 @@ pub enum Object {
 
 #[derive(Debug)]
 pub struct HittableList {
-    pub objects: Vec<Object>,
+    pub objects: Vec<Arc<Object>>,
     bbox: AABB,
 }
 
@@ -75,7 +75,7 @@ impl HittableList {
     }
 
     pub fn add<T: Into<Object>>(&mut self, object: T) {
-        let object = object.into();
+        let object: Arc<Object> = Arc::new(object.into());
         self.bbox = AABB::containing(self.bbox, object.bounding_box());
         self.objects.push(object);
     }

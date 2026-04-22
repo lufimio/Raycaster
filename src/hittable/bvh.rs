@@ -1,8 +1,10 @@
-use std::sync::Arc;
+use std::{cmp::Ordering, sync::Arc, usize};
+
+use rand::random_range;
 
 use crate::{
     geometry::{Interval, Point3, Ray},
-    hittable::{HitRecord, Hittable, Object},
+    hittable::{HitRecord, Hittable, HittableList, Object},
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -23,6 +25,14 @@ impl AABB {
             y: Interval::new(f64::min(a.y, b.y), f64::max(a.y, b.y)),
             z: Interval::new(f64::min(a.z, b.z), f64::max(a.z, b.z)),
         }
+    }
+
+    pub fn empty() -> Self {
+        Self::new(Interval::empty(), Interval::empty(), Interval::empty())
+    }
+
+    pub fn all() -> Self {
+        Self::new(Interval::all(), Interval::all(), Interval::all())
     }
 
     pub fn containing(a: AABB, b: AABB) -> AABB {
@@ -77,9 +87,55 @@ impl AABB {
 
 #[derive(Debug, Clone)]
 pub struct BVHNode {
-    left: Arc<Object>,
-    right: Arc<Object>,
+    left: Option<Arc<Object>>,
+    right: Option<Arc<Object>>,
     bbox: AABB,
+}
+
+impl BVHNode {
+    pub fn from_hittable_list(list: HittableList) -> Self {
+        Self::new(list.objects)
+    }
+
+    fn new(mut objects: Vec<Arc<Object>>) -> Self {
+        let axis = random_range(0..=2);
+
+        let left;
+        let right;
+        let bbox;
+        if objects.len() == 0 {
+            left = None;
+            right = None;
+            bbox = AABB::empty();
+        } else if objects.len() == 1 {
+            left = Some(Arc::clone(&objects[0]));
+            right = None;
+            bbox = left.as_ref().unwrap().bounding_box();
+        } else if objects.len() == 2 {
+            left = Some(Arc::clone(&objects[0]));
+            right = Some(Arc::clone(&objects[1]));
+            bbox = AABB::containing(
+                left.as_ref().unwrap().bounding_box(),
+                right.as_ref().unwrap().bounding_box(),
+            );
+        } else {
+            objects.sort_by(|a, b| {
+                a.bounding_box()
+                    .axis_interval(axis)
+                    .min
+                    .total_cmp(&b.bounding_box().axis_interval(axis).min)
+            });
+            let mid = objects.len() / 2;
+            right = Some(Arc::new(BVHNode::new(objects.split_off(mid)).into()));
+            left = Some(Arc::new(BVHNode::new(objects).into()));
+            bbox = AABB::containing(
+                left.as_ref().unwrap().bounding_box(),
+                right.as_ref().unwrap().bounding_box(),
+            );
+        }
+
+        Self { left, right, bbox }
+    }
 }
 
 impl Hittable for BVHNode {
@@ -87,20 +143,26 @@ impl Hittable for BVHNode {
         if !self.bbox.hit(r, t_interval) {
             None
         } else {
-            let left_rec = self.left.hit(r, t_interval);
-            if let Some(right_rec) = self.right.hit(
-                r,
-                Interval::new(
-                    t_interval.min,
-                    match left_rec {
-                        Some(ref rec) => rec.t,
-                        None => t_interval.max,
-                    },
-                ),
-            ) {
-                Some(right_rec)
+            if let Some(left) = self.left.as_ref() {
+                let left_rec = left.hit(r, t_interval);
+                if let Some(right) = self.right.as_ref()
+                    && let Some(right_rec) = right.hit(
+                        r,
+                        Interval::new(
+                            t_interval.min,
+                            match left_rec {
+                                Some(ref rec) => rec.t,
+                                None => t_interval.max,
+                            },
+                        ),
+                    )
+                {
+                    Some(right_rec)
+                } else {
+                    left_rec
+                }
             } else {
-                left_rec
+                None
             }
         }
     }
