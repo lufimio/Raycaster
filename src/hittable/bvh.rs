@@ -52,6 +52,14 @@ impl AABB {
         }
     }
 
+    pub fn longest_axis(self) -> usize {
+        if self.x.size() > self.y.size() {
+            if self.x.size() > self.z.size() { 0 } else { 2 }
+        } else {
+            if self.y.size() > self.z.size() { 1 } else { 2 }
+        }
+    }
+
     pub fn hit(self, r: Ray, t_interval: Interval) -> bool {
         for axis in 0..3 {
             let ax = self.axis_interval(axis);
@@ -98,26 +106,23 @@ impl BVHNode {
     }
 
     fn new(mut objects: Vec<Arc<Object>>) -> Self {
-        let axis = random_range(0..=2);
+        let mut bbox = AABB::empty();
+        for obj in &objects {
+            bbox = AABB::containing(bbox, obj.bounding_box());
+        }
+        let axis = bbox.longest_axis();
 
         let left;
         let right;
-        let bbox;
         if objects.len() == 0 {
             left = None;
             right = None;
-            bbox = AABB::empty();
         } else if objects.len() == 1 {
             left = Some(Arc::clone(&objects[0]));
             right = None;
-            bbox = left.as_ref().unwrap().bounding_box();
         } else if objects.len() == 2 {
             left = Some(Arc::clone(&objects[0]));
             right = Some(Arc::clone(&objects[1]));
-            bbox = AABB::containing(
-                left.as_ref().unwrap().bounding_box(),
-                right.as_ref().unwrap().bounding_box(),
-            );
         } else {
             objects.sort_by(|a, b| {
                 a.bounding_box()
