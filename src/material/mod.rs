@@ -2,13 +2,13 @@ pub mod dielectric;
 pub mod lambertian;
 pub mod metal;
 
+use enum_dispatch::enum_dispatch;
 use crate::{
     geometry::{Color, Ray},
     hittable::HitRecord,
     material::{dielectric::Dielectric, lambertian::Lambertian, metal::Metal},
 };
 
-use enum_dispatch::enum_dispatch;
 
 #[enum_dispatch]
 pub trait Scatterable {

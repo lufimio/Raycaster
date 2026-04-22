@@ -2,9 +2,7 @@ pub mod bvh;
 pub mod sphere;
 
 use std::sync::Arc;
-
 use enum_dispatch::enum_dispatch;
-
 use crate::{
     geometry::{Interval, Point3, Ray, Vec3},
     hittable::{bvh::{AABB, BVHNode}, sphere::Sphere},
@@ -16,15 +14,15 @@ pub struct HitRecord {
     pub p: Point3,
     pub normal: Vec3,
     pub mat: Arc<Material>,
-    pub t: f64,
+    pub t: f32,
     pub front_face: bool,
 }
 
 impl HitRecord {
-    pub fn new(p: Point3, mat: Arc<Material>, t: f64) -> Self {
+    pub fn new(p: Point3, mat: Arc<Material>, t: f32) -> Self {
         Self {
             p,
-            normal: Vec3::zero(),
+            normal: Vec3::ZERO,
             mat,
             t,
             front_face: false,

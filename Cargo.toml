@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 enum_dispatch = "0.3.13"
+glam = { version = "0.32.1", features = ["rand"] }
 image = { version = "0.25.10", features = ["rayon"] }
 indicatif = { version = "0.18.4", features = ["improved_unicode", "rayon"] }
 rand = "0.10.1"

@@ -1,17 +1,17 @@
 use crate::{
-    geometry::{random_unit_vector, Color, Ray},
+    geometry::{Color, Ray, random_unit_vector},
     hittable::HitRecord,
-    material::{dielectric::reflect, Scatterable},
+    material::Scatterable,
 };
 
 #[derive(Debug, Clone, Copy)]
 pub struct Metal {
     albedo: Color,
-    fuzz: f64,
+    fuzz: f32,
 }
 
 impl Metal {
-    pub fn new(albedo: Color, fuzz: f64) -> Self {
+    pub fn new(albedo: Color, fuzz: f32) -> Self {
         Self {
             albedo,
             fuzz: fuzz.clamp(0., 1.),
@@ -21,8 +21,8 @@ impl Metal {
 
 impl Scatterable for Metal {
     fn scatter(&self, r: Ray, rec: &HitRecord) -> Option<(Ray, Color)> {
-        let reflected = reflect(r.direction, rec.normal);
-        let reflected = reflected.normalized() + self.fuzz * random_unit_vector();
+        let reflected = r.direction.reflect(rec.normal);
+        let reflected = reflected.normalize() + self.fuzz * random_unit_vector();
         let scattered = Ray::new(rec.p, reflected);
 
         if scattered.direction.dot(rec.normal) > 0.0 {

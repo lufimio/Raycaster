@@ -1,5 +1,5 @@
 use crate::{
-    geometry::{random_unit_vector, Color, Ray},
+    geometry::{Color, Ray, near_zero, random_unit_vector},
     hittable::HitRecord,
     material::Scatterable,
 };
@@ -18,7 +18,7 @@ impl Lambertian {
 impl Scatterable for Lambertian {
     fn scatter(&self, _r: Ray, rec: &HitRecord) -> Option<(Ray, Color)> {
         let mut scatter_direction = rec.normal + random_unit_vector();
-        if scatter_direction.near_zero() {
+        if near_zero(scatter_direction) {
             scatter_direction = rec.normal
         }
 

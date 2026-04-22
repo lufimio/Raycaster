@@ -1,7 +1,4 @@
-use std::{cmp::Ordering, sync::Arc, usize};
-
-use rand::random_range;
-
+use std::sync::Arc;
 use crate::{
     geometry::{Interval, Point3, Ray},
     hittable::{HitRecord, Hittable, HittableList, Object},
@@ -21,9 +18,9 @@ impl AABB {
 
     pub fn from_extrema(a: Point3, b: Point3) -> Self {
         Self {
-            x: Interval::new(f64::min(a.x, b.x), f64::max(a.x, b.x)),
-            y: Interval::new(f64::min(a.y, b.y), f64::max(a.y, b.y)),
-            z: Interval::new(f64::min(a.z, b.z), f64::max(a.z, b.z)),
+            x: Interval::new(f32::min(a.x, b.x), f32::max(a.x, b.x)),
+            y: Interval::new(f32::min(a.y, b.y), f32::max(a.y, b.y)),
+            z: Interval::new(f32::min(a.z, b.z), f32::max(a.z, b.z)),
         }
     }
 
