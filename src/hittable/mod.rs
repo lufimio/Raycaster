@@ -1,14 +1,13 @@
 pub mod bvh;
 pub mod quad;
 pub mod sphere;
+pub mod constant_density_medium;
 pub mod transformations;
 
 use crate::{
     geometry::{Interval, Point3, Ray, Vec3},
     hittable::{
-        bvh::{AABB, BVHNode},
-        quad::Quad,
-        sphere::Sphere, transformations::{Rotation, Translation},
+        bvh::{AABB, BVHNode}, constant_density_medium::ConstantDensityMedium, quad::Quad, sphere::Sphere, transformations::{Rotation, Translation}
     },
     material::Material,
 };
@@ -65,6 +64,7 @@ pub trait Hittable {
 pub enum Object {
     Sphere,
     Quad,
+    ConstantDensityMedium,
     Translation,
     Rotation,
     HittableList,

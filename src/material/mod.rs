@@ -2,11 +2,12 @@ pub mod dielectric;
 pub mod lambertian;
 pub mod light;
 pub mod metal;
+pub mod isotropic;
 
 use crate::{
     geometry::{Color, Point3, Ray},
     hittable::HitRecord,
-    material::{dielectric::Dielectric, lambertian::Lambertian, light::DiffuseLight, metal::Metal},
+    material::{dielectric::Dielectric, isotropic::Isotropic, lambertian::Lambertian, light::DiffuseLight, metal::Metal},
 };
 use enum_dispatch::enum_dispatch;
 
@@ -27,5 +28,6 @@ pub enum Material {
     Lambertian,
     Metal,
     Dielectric,
+    Isotropic,
     DiffuseLight,
 }
