@@ -1,8 +1,10 @@
+use glam::Vec3;
+
 use crate::{
     geometry::{Interval, Point3, Ray},
     hittable::{HitRecord, Hittable, HittableList, Object},
 };
-use std::sync::Arc;
+use std::{ops::Add, sync::Arc};
 
 #[derive(Debug, Clone, Copy)]
 pub struct AABB {
@@ -107,6 +109,22 @@ impl AABB {
             }
         }
         return true;
+    }
+}
+
+impl Add<Vec3> for AABB {
+    type Output = AABB;
+
+    fn add(self, offset: Vec3) -> Self::Output {
+        AABB::new(self.x + offset.x, self.y + offset.y, self.z + offset.z)
+    }
+}
+
+impl Add<AABB> for Vec3 {
+    type Output = AABB;
+
+    fn add(self, aabb: AABB) -> Self::Output {
+        AABB::new(aabb.x + self.x, aabb.y + self.y, aabb.z + self.z)
     }
 }
 

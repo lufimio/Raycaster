@@ -1,7 +1,7 @@
 pub use glam::Vec3;
 use image::Rgb;
 use rand::{random, random_range};
-use std::f32;
+use std::{f32, ops::Add};
 
 pub fn near_zero(v: Vec3) -> bool {
     v.x.abs() < 1e-8 && v.y.abs() < 1e-8 && v.z.abs() < 1e-8
@@ -86,6 +86,22 @@ impl Interval {
 
     pub fn clamp(self, x: f32) -> f32 {
         x.clamp(self.min, self.max)
+    }
+}
+
+impl Add<f32> for Interval {
+    type Output = Interval;
+
+    fn add(self, rhs: f32) -> Self::Output {
+        Interval::new(self.min + rhs, self.max + rhs)
+    }
+}
+
+impl Add<Interval> for f32 {
+    type Output = Interval;
+
+    fn add(self, rhs: Interval) -> Self::Output {
+        rhs + self
     }
 }
 

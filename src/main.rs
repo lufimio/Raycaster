@@ -12,10 +12,12 @@ use crate::{
         bvh::BVHNode,
         quad::{Quad, make_box},
         sphere::Sphere,
+        transformations::{Rotation, Translation},
     },
     material::{dielectric::Dielectric, lambertian::Lambertian, light::DiffuseLight, metal::Metal},
     texture::{Texture, checker::Checker, image::Image},
 };
+use glam::Quat;
 use rand::{random, random_range};
 use std::{f32, sync::Arc};
 
@@ -246,22 +248,34 @@ fn setup_cornell_box() {
         Arc::clone(&white),
     ));
 
-    world.add(make_box(
-        Point3::new(130., 0., 65.),
-        Point3::new(295., 165., 230.),
-        Arc::clone(&white),
+    world.add(Translation::new(
+        Rotation::new(
+            make_box(
+                Point3::new(0., 0., 0.),
+                Point3::new(165., 330., 165.),
+                Arc::clone(&white),
+            ),
+            Quat::from_rotation_y(15_f32.to_radians()),
+        ),
+        Vec3::new(265., 0., 295.),
     ));
 
-    world.add(make_box(
-        Point3::new(265., 0., 295.),
-        Point3::new(430., 330., 460.),
-        Arc::clone(&white),
+    world.add(Translation::new(
+        Rotation::new(
+            make_box(
+                Point3::new(0., 0., 0.),
+                Point3::new(165., 165., 165.),
+                Arc::clone(&white),
+            ),
+            Quat::from_rotation_y(-18_f32.to_radians()),
+        ),
+        Vec3::new(130., 0., 65.),
     ));
 
     let camera = Camera::new(
         1.0,                            // aspect ratio
         600,                            // image width
-        200,                            // samples per pixel
+        1000,                           // samples per pixel
         50,                             // max depth
         40.0,                           // fov
         Point3::new(278., 278., -800.), // look from
@@ -272,7 +286,7 @@ fn setup_cornell_box() {
         10.0,                           // focus distance
     );
 
-    camera.render(&world, "output/render.png");
+    camera.render(&BVHNode::from_hittable_list(world), "output/cornell.png");
 }
 
 fn main() {
