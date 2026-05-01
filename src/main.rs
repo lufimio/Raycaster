@@ -2,11 +2,12 @@ mod camera;
 mod geometry;
 mod hittable;
 mod material;
+mod pdf;
 mod texture;
 
 use crate::{
     camera::Camera,
-    geometry::{Color, Point3, Vec3},
+    geometry::{Color, Point3},
     hittable::{
         HittableList,
         bvh::BVHNode,
@@ -15,10 +16,12 @@ use crate::{
         sphere::Sphere,
         transformations::{Rotation, Translation},
     },
-    material::{dielectric::Dielectric, lambertian::Lambertian, light::DiffuseLight, metal::Metal},
+    material::{
+        Empty, dielectric::Dielectric, lambertian::Lambertian, light::DiffuseLight, metal::Metal,
+    },
     texture::{Texture, checker::Checker, image::Image},
 };
-use glam::{EulerRot, Quat};
+use glam::{EulerRot, Quat, Vec3};
 use rand::{random, random_range};
 use std::{f32, sync::Arc};
 
@@ -110,7 +113,11 @@ fn setup_scattered_balls(image_width: u32, samples_per_pixel: u32) {
         10.0,                      // focus distance
     );
 
-    camera.render(&world, "output/render.png");
+    camera.render(
+        &world.into(),
+        &HittableList::empty().into(),
+        "output/render.png",
+    );
 }
 
 fn setup_quads() {
@@ -174,7 +181,11 @@ fn setup_quads() {
         10.0,                      // focus distance
     );
 
-    camera.render(&world, "output/render.png");
+    camera.render(
+        &world.into(),
+        &HittableList::empty().into(),
+        "output/render.png",
+    );
 }
 
 fn setup_earth() {
@@ -196,7 +207,11 @@ fn setup_earth() {
         10.0,                      // focus distance
     );
 
-    camera.render(&globe, "output/render.png");
+    camera.render(
+        &globe.into(),
+        &HittableList::empty().into(),
+        "output/render.png",
+    );
 }
 
 fn setup_cornell_box(image_width: u32, samples_per_pixel: u32) {
@@ -249,6 +264,7 @@ fn setup_cornell_box(image_width: u32, samples_per_pixel: u32) {
         Arc::clone(&white),
     ));
 
+    // let aluminum = Arc::new(Metal::new(Color::new(0.8, 0.85, 0.88), 0.0).into());
     let box1 = Translation::new(
         Rotation::new(
             make_box(
@@ -261,28 +277,51 @@ fn setup_cornell_box(image_width: u32, samples_per_pixel: u32) {
         Vec3::new(265., 0., 295.),
     );
 
-    world.add(ConstantDensityMedium::new(
-        box1,
-        0.01,
-        Arc::new(Color::new(0.0, 0.0, 0.0).into()),
+    world.add(box1);
+    // world.add(ConstantDensityMedium::new(
+    //     box1,
+    //     0.01,
+    //     Arc::new(Color::new(0.0, 0.0, 0.0).into()),
+    // ));
+
+    world.add(Sphere::new(
+        Point3::new(190., 90., 190.),
+        90.,
+        Arc::new(Dielectric::new(1.5).into()),
     ));
 
-    let box2 = Translation::new(
-        Rotation::new(
-            make_box(
-                Point3::new(0., 0., 0.),
-                Point3::new(165., 165., 165.),
-                Arc::clone(&white),
-            ),
-            Quat::from_rotation_y(-18_f32.to_radians()),
-        ),
-        Vec3::new(130., 0., 65.),
-    );
+    // let box2 = Translation::new(
+    //     Rotation::new(
+    //         make_box(
+    //             Point3::new(0., 0., 0.),
+    //             Point3::new(165., 165., 165.),
+    //             Arc::clone(&white),
+    //         ),
+    //         Quat::from_rotation_y(-18_f32.to_radians()),
+    //     ),
+    //     Vec3::new(130., 0., 65.),
+    // );
 
-    world.add(ConstantDensityMedium::new(
-        box2,
-        0.01,
-        Arc::new(Color::new(1.0, 1.0, 1.0).into()),
+    // world.add(box2);
+    // world.add(ConstantDensityMedium::new(
+    //     box2,
+    //     0.01,
+    //     Arc::new(Color::new(1.0, 1.0, 1.0).into()),
+    // ));
+
+    let mut lights = HittableList::empty();
+
+    lights.add(Quad::new(
+        Point3::new(343.0, 554.0, 332.0),
+        Vec3::new(-130.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, -105.0),
+        Arc::new(Empty.into()),
+    ));
+
+    lights.add(Sphere::new(
+        Point3::new(190., 90., 190.),
+        90.,
+        Arc::new(Empty.into()),
     ));
 
     let camera = Camera::new(
@@ -299,7 +338,11 @@ fn setup_cornell_box(image_width: u32, samples_per_pixel: u32) {
         10.0,                           // focus distance
     );
 
-    camera.render(&BVHNode::from_hittable_list(world), "output/render.png");
+    camera.render(
+        &world.into(),
+        &lights.into(),
+        "output/render.png",
+    );
 }
 
 fn setup_spheres_and_boxes(image_width: u32, samples_per_pixel: u32) {
@@ -321,12 +364,12 @@ fn setup_spheres_and_boxes(image_width: u32, samples_per_pixel: u32) {
     let mut world = HittableList::empty();
     world.add(BVHNode::from_hittable_list(boxes1));
 
-    let light = Arc::new(DiffuseLight::new(Arc::new(Color::new(7., 7., 7.).into())).into());
+    let light_mat = Arc::new(DiffuseLight::new(Arc::new(Color::new(9., 9., 9.).into())).into());
     world.add(Quad::new(
         Point3::new(123., 554., 147.),
         Vec3::new(300., 0., 0.),
         Vec3::new(0., 0., 265.),
-        Arc::clone(&light),
+        Arc::clone(&light_mat),
     ));
 
     world.add(ConstantDensityMedium::new(
@@ -348,7 +391,7 @@ fn setup_spheres_and_boxes(image_width: u32, samples_per_pixel: u32) {
     world.add(Sphere::new(
         Point3::new(0., 150., 145.),
         50.,
-        Arc::new(Metal::new(Color::new(0.8, 0.8, 0.9), 1.0).into()),
+        Arc::new(Metal::new(Color::new(0.8, 0.8, 0.9), 0.1).into()),
     ));
 
     let boundary = Sphere::new(
@@ -406,6 +449,13 @@ fn setup_spheres_and_boxes(image_width: u32, samples_per_pixel: u32) {
         Vec3::new(0., 270., 395.),
     ));
 
+    let light = Quad::new(
+        Point3::new(123., 554., 147.),
+        Vec3::new(300., 0., 0.),
+        Vec3::new(0., 0., 265.),
+        Arc::new(Empty.into()),
+    );
+
     let camera = Camera::new(
         1.0,                            // aspect ratio
         image_width,                    // image width
@@ -420,7 +470,7 @@ fn setup_spheres_and_boxes(image_width: u32, samples_per_pixel: u32) {
         10.0,                           // focus distance
     );
 
-    camera.render(&world, "output/idkstuff.png");
+    camera.render(&world.into(), &light.into(), "output/idkstuff.png");
 }
 
 fn main() {
@@ -428,8 +478,8 @@ fn main() {
         1 => setup_scattered_balls(400, 50),
         2 => setup_quads(),
         3 => setup_earth(),
-        4 => setup_cornell_box(300, 2000),
-        5 => setup_spheres_and_boxes(200, 100),
+        4 => setup_cornell_box(600, 100),
+        5 => setup_spheres_and_boxes(600, 50),
         _ => (),
     }
 }

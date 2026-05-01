@@ -1,10 +1,8 @@
-use std::sync::Arc;
-
-use image::{DynamicImage, GenericImageView, ImageReader, RgbImage};
+use image::{ImageReader, RgbImage};
 
 use crate::{
     geometry::{Color, Interval, Point3, rgb_to_color},
-    texture::{Sample, Texture},
+    texture::Sample,
 };
 
 #[derive(Debug, Clone)]

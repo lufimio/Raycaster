@@ -1,5 +1,8 @@
+use glam::{Mat3, Vec3};
+use rand::random;
+
 use crate::{
-    geometry::{Interval, Point3, Ray, Vec3},
+    geometry::{Interval, Point3, Ray},
     hittable::{HitRecord, Hittable, bvh::AABB},
     material::Material,
 };
@@ -12,6 +15,14 @@ pub struct Sphere {
     radius: f32,
     mat: Arc<Material>,
     bbox: AABB,
+}
+
+fn random_to_sphere(radius: f32, distance_squared: f32) -> Vec3 {
+    let z = 1.0 + random::<f32>() * (f32::sqrt(1.0 - radius * radius / distance_squared) - 1.0);
+    let phi = 2.0 * random::<f32>() * f32::consts::PI;
+    let x = phi.cos() * f32::sqrt(1.0 - z * z);
+    let y = phi.sin() * f32::sqrt(1.0 - z * z);
+    Vec3::new(x, y, z)
 }
 
 impl Hittable for Sphere {
@@ -47,6 +58,30 @@ impl Hittable for Sphere {
 
     fn bounding_box(&self) -> AABB {
         self.bbox
+    }
+
+    fn pdf_value(&self, origin: Point3, direction: Vec3) -> f32 {
+        if let Some(_) = self.hit(Ray::new(origin, direction), Interval::new(0.001, f32::INFINITY)) {
+            let dist_squared = Vec3::length_squared(self.center - origin);
+
+            if dist_squared <= self.radius * self.radius {
+                return 0.0;
+            }
+
+            let cos_theta_max = f32::sqrt(1.0 - self.radius * self.radius / dist_squared);
+            let solid_angle = 2.0 * f32::consts::PI * (1.0 - cos_theta_max);
+
+            1.0 / solid_angle
+        } else {
+            0.0
+        }
+    }
+
+    fn random(&self, origin: Point3) -> Vec3 {
+        let direction = self.center - origin;
+        let (u, v) = direction.any_orthonormal_pair();
+        let onb = Mat3::from_cols(u, v, direction);
+        onb * random_to_sphere(self.radius, direction.length_squared())
     }
 }
 

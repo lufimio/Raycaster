@@ -1,11 +1,11 @@
-use std::sync::Arc;
-
 use crate::{
-    geometry::{Color, Ray, near_zero, random_unit_vector},
+    geometry::Ray,
     hittable::HitRecord,
-    material::Scatter,
+    material::{Scatter, ScatterRecord},
+    pdf::simple::CosinePDF,
     texture::{Sample, Texture},
 };
+use std::{f32, sync::Arc};
 
 #[derive(Debug, Clone)]
 pub struct Lambertian {
@@ -19,15 +19,19 @@ impl Lambertian {
 }
 
 impl Scatter for Lambertian {
-    fn scatter(&self, _r: Ray, rec: &HitRecord) -> Option<(Ray, Color)> {
-        let mut scatter_direction = rec.normal + random_unit_vector();
-        if near_zero(scatter_direction) {
-            scatter_direction = rec.normal
-        }
-
-        Some((
-            Ray::new(rec.p, scatter_direction),
+    fn scatter(&self, _r: Ray, rec: &HitRecord) -> Option<ScatterRecord<'_>> {
+        Some(ScatterRecord::from_pdf(
             self.tex.sample(rec.u, rec.v, rec.p),
+            CosinePDF::new(rec.normal).into(),
         ))
+    }
+
+    fn scattering_pdf(&self, _r: Ray, rec: &HitRecord, scattered: Ray) -> f32 {
+        let cos_theta = rec.normal.dot(scattered.direction.normalize());
+        if cos_theta < 0. {
+            0.
+        } else {
+            cos_theta / f32::consts::PI
+        }
     }
 }

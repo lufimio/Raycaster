@@ -18,7 +18,11 @@ impl DiffuseLight {
 }
 
 impl Scatter for DiffuseLight {
-    fn emitted(&self, u: f32, v: f32, p: Point3) -> Color {
-        self.tex.sample(u, v, p)
+    fn emitted(&self, _r: Ray, rec: &HitRecord, u: f32, v: f32, p: Point3) -> Color {
+        if rec.front_face {
+            self.tex.sample(u, v, p)
+        } else {
+            Color::ZERO
+        }
     }
 }

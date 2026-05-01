@@ -1,6 +1,8 @@
+use core::f32;
 use std::sync::Arc;
 
 use glam::Vec3;
+use rand::random;
 
 use crate::{
     geometry::{Interval, Point3, Ray},
@@ -18,6 +20,7 @@ pub struct Quad {
     bbox: AABB,
     normal: Vec3,
     d: f32,
+    area: f32,
 }
 
 impl Quad {
@@ -29,6 +32,7 @@ impl Quad {
         let normal = n.normalize();
         let d = normal.dot(corner);
         let w = n / Vec3::dot(n, n);
+        let area = n.length();
 
         Self {
             corner,
@@ -39,6 +43,7 @@ impl Quad {
             bbox,
             normal,
             d,
+            area,
         }
     }
 }
@@ -74,6 +79,24 @@ impl Hittable for Quad {
     fn bounding_box(&self) -> AABB {
         self.bbox
     }
+
+    fn pdf_value(&self, origin: Point3, direction: Vec3) -> f32 {
+        if let Some(rec) = self.hit(
+            Ray::new(origin, direction),
+            Interval::new(0.001, f32::INFINITY),
+        ) {
+            let distance_squared = rec.t * rec.t * direction.length_squared();
+            let cosine = f32::abs(direction.dot(rec.normal) / direction.length());
+
+            distance_squared / (cosine * self.area)
+        } else {
+            0.0
+        }
+    }
+
+    fn random(&self, origin: Point3) -> Vec3 {
+        self.corner + (random::<f32>() * self.u) + (random::<f32>() * self.v) - origin
+    }
 }
 
 pub fn make_box(a: Point3, b: Point3, mat: Arc<Material>) -> HittableList {
@@ -86,12 +109,42 @@ pub fn make_box(a: Point3, b: Point3, mat: Arc<Material>) -> HittableList {
     let dy = Vec3::new(0.0, max.y - min.y, 0.0);
     let dz = Vec3::new(0.0, 0.0, max.z - min.z);
 
-    sides.add(Quad::new(Point3::new(min.x, min.y, max.z), dx, dy, Arc::clone(&mat)));
-    sides.add(Quad::new(Point3::new(max.x, min.y, max.z), -dz, dy, Arc::clone(&mat)));
-    sides.add(Quad::new(Point3::new(max.x, min.y, min.z), -dx, dy, Arc::clone(&mat)));
-    sides.add(Quad::new(Point3::new(min.x, min.y, min.z), dz, dy, Arc::clone(&mat)));
-    sides.add(Quad::new(Point3::new(min.x, max.y, max.z), dx, -dz, Arc::clone(&mat)));
-    sides.add(Quad::new(Point3::new(min.x, min.y, min.z), dx, dz, Arc::clone(&mat)));
+    sides.add(Quad::new(
+        Point3::new(min.x, min.y, max.z),
+        dx,
+        dy,
+        Arc::clone(&mat),
+    ));
+    sides.add(Quad::new(
+        Point3::new(max.x, min.y, max.z),
+        -dz,
+        dy,
+        Arc::clone(&mat),
+    ));
+    sides.add(Quad::new(
+        Point3::new(max.x, min.y, min.z),
+        -dx,
+        dy,
+        Arc::clone(&mat),
+    ));
+    sides.add(Quad::new(
+        Point3::new(min.x, min.y, min.z),
+        dz,
+        dy,
+        Arc::clone(&mat),
+    ));
+    sides.add(Quad::new(
+        Point3::new(min.x, max.y, max.z),
+        dx,
+        -dz,
+        Arc::clone(&mat),
+    ));
+    sides.add(Quad::new(
+        Point3::new(min.x, min.y, min.z),
+        dx,
+        dz,
+        Arc::clone(&mat),
+    ));
 
     sides
 }

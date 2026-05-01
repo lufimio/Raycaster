@@ -1,15 +1,7 @@
-pub use glam::Vec3;
+use glam::Vec3;
 use image::Rgb;
 use rand::{random, random_range};
 use std::{f32, ops::Add};
-
-pub fn near_zero(v: Vec3) -> bool {
-    v.x.abs() < 1e-8 && v.y.abs() < 1e-8 && v.z.abs() < 1e-8
-}
-
-pub fn sample_square() -> Vec3 {
-    Vec3::new(random::<f32>() - 0.5, random::<f32>() - 0.5, 0.0)
-}
 
 pub fn linear_to_gamma(linear: f32) -> f32 {
     if linear > 0.0 { linear.sqrt() } else { 0.0 }
@@ -31,9 +23,16 @@ pub fn random_unit_vector() -> Vec3 {
     Vec3::new(r * long.sin(), y, r * long.cos())
 }
 
-pub fn random_on_hemisphere(normal: Vec3) -> Vec3 {
-    let unit = random_unit_vector();
-    if unit.dot(normal) > 0.0 { unit } else { -unit }
+pub fn random_cosine_direction() -> Vec3 {
+    let r1: f32 = random();
+    let r2: f32 = random();
+
+    let phi = 2. * f32::consts::PI * r1;
+    let x = phi.cos() * r2.sqrt();
+    let y = phi.sin() * r2.sqrt();
+    let z = f32::sqrt(1. - r2);
+
+    Vec3::new(x, y, z)
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -109,9 +108,13 @@ pub type Point3 = Vec3;
 pub type Color = Vec3;
 
 pub fn color_to_rgb(color: Color) -> Rgb<u8> {
-    let r = linear_to_gamma(color.x);
-    let g = linear_to_gamma(color.y);
-    let b = linear_to_gamma(color.z);
+    let r = color.x.is_nan().then_some(0.0).unwrap_or(color.x);
+    let g = color.y.is_nan().then_some(0.0).unwrap_or(color.y);
+    let b = color.z.is_nan().then_some(0.0).unwrap_or(color.z);
+
+    let r = linear_to_gamma(r);
+    let g = linear_to_gamma(g);
+    let b = linear_to_gamma(b);
 
     let intensity = Interval::new(0.0, 0.999);
     Rgb([

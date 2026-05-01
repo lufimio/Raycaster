@@ -1,17 +1,23 @@
 pub mod bvh;
+pub mod constant_density_medium;
 pub mod quad;
 pub mod sphere;
-pub mod constant_density_medium;
 pub mod transformations;
 
 use crate::{
-    geometry::{Interval, Point3, Ray, Vec3},
+    geometry::{Interval, Point3, Ray},
     hittable::{
-        bvh::{AABB, BVHNode}, constant_density_medium::ConstantDensityMedium, quad::Quad, sphere::Sphere, transformations::{Rotation, Translation}
+        bvh::{AABB, BVHNode},
+        constant_density_medium::ConstantDensityMedium,
+        quad::Quad,
+        sphere::Sphere,
+        transformations::{Rotation, Translation},
     },
     material::Material,
 };
 use enum_dispatch::enum_dispatch;
+use glam::Vec3;
+use rand::random_range;
 use std::sync::Arc;
 
 #[derive(Debug, Clone)]
@@ -57,6 +63,14 @@ impl HitRecord {
 pub trait Hittable {
     fn hit(&self, r: Ray, t_interval: Interval) -> Option<HitRecord>;
     fn bounding_box(&self) -> AABB;
+
+    fn pdf_value(&self, _origin: Point3, _direction: Vec3) -> f32 {
+        0.0
+    }
+
+    fn random(&self, _origin: Point3) -> Vec3 {
+        Vec3::X
+    }
 }
 
 #[enum_dispatch(Hittable)]
@@ -85,6 +99,7 @@ impl HittableList {
         }
     }
 
+    #[allow(dead_code)]
     pub fn clear(&mut self) {
         self.objects.clear();
         self.bbox = AABB::new(Interval::empty(), Interval::empty(), Interval::empty());
@@ -114,5 +129,17 @@ impl Hittable for HittableList {
 
     fn bounding_box(&self) -> AABB {
         self.bbox
+    }
+
+    fn pdf_value(&self, origin: Point3, direction: Vec3) -> f32 {
+        let weight = 1.0 / self.objects.len() as f32;
+        self.objects
+            .iter()
+            .map(|obj| weight * obj.pdf_value(origin, direction))
+            .sum()
+    }
+
+    fn random(&self, origin: Point3) -> Vec3 {
+        self.objects[random_range(0..self.objects.len())].random(origin)
     }
 }
